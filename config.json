@@ -1,0 +1,56 @@
+{
+  "deployment_mode": "workstation",
+  "max_concurrent_requests": 5,
+  "context_window": {
+    "min": 32000,
+    "max": 256000
+  },
+  "default_quality_threshold": 85,
+  "default_max_iterations": 5,
+  "task_timeout_minutes": 30,
+  "retry_ceiling_minutes": 10,
+  "endpoints": {
+    "alpha": {
+      "type": "ollama",
+      "base_url": "http://192.168.101.85:11434",
+      "model": "qwen2.5-coder:32b"
+    },
+    "beta": {
+      "type": "ollama",
+      "base_url": "http://192.168.101.85:11434",
+      "model": "deepseek-r1:14b"
+    }
+  },
+  "system_prompts": {
+    "alpha": {
+      "base_prompt": "You are Agent Alpha, an expert software engineer. Your task is to generate high-quality code based on the provided specifications."
+    },
+    "beta": {
+      "base_prompt": "You are Agent Beta, an expert code reviewer. Your task is to review the provided code for quality, correctness, and adherence to policies."
+    }
+  },
+  "policies_path": "./policies",
+  "log_path": "./logs/alcs.log",
+  "log_level": "info",
+  "mcp_server": {
+    "transport": "stdio",
+    "sse_port": 3000,
+    "sse_host": "localhost"
+  },
+  "database": {
+    "provider": "postgresql",
+    "host": "localhost",
+    "port": 5432,
+    "database": "alcs",
+    "user": "alcs",
+    "connection_pool": {
+      "min": 2,
+      "max": 10
+    },
+    "retry": {
+      "max_attempts": 3,
+      "initial_delay_ms": 1000,
+      "max_delay_ms": 10000
+    }
+  }
+}

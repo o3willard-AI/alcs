@@ -1,0 +1,16 @@
+# Grafana Dashboard Provisioning Configuration
+# Automatically loads dashboards from the specified path
+
+apiVersion: 1
+
+providers:
+  - name: 'ALCS Dashboards'
+    orgId: 1
+    folder: 'ALCS'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true

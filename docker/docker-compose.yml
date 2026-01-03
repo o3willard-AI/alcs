@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # Python test execution service
+  alcs-python:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    image: alcs/test-runner-python:latest
+    container_name: alcs-python
+    volumes:
+      - test-workspace:/workspace
+    networks:
+      - alcs-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 100
+    restart: "no"
+    profiles:
+      - python
+      - all
+
+  # Node.js test execution service
+  alcs-node:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    image: alcs/test-runner-node:latest
+    container_name: alcs-node
+    volumes:
+      - test-workspace:/workspace
+    networks:
+      - alcs-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 100
+    restart: "no"
+    profiles:
+      - node
+      - all
+
+  # Go test execution service
+  alcs-go:
+    build:
+      context: .
+      dockerfile: Dockerfile.go
+    image: alcs/test-runner-go:latest
+    container_name: alcs-go
+    volumes:
+      - test-workspace:/workspace
+      - go-cache:/home/testuser/.cache/go-build
+    networks:
+      - alcs-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 100
+    restart: "no"
+    profiles:
+      - go
+      - all
+
+  # Java test execution service
+  alcs-java:
+    build:
+      context: .
+      dockerfile: Dockerfile.java
+    image: alcs/test-runner-java:latest
+    container_name: alcs-java
+    volumes:
+      - test-workspace:/workspace
+      - maven-cache:/home/testuser/.m2/repository
+    networks:
+      - alcs-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 100
+    restart: "no"
+    profiles:
+      - java
+      - all
+
+networks:
+  alcs-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  test-workspace:
+    driver: local
+  go-cache:
+    driver: local
+  maven-cache:
+    driver: local

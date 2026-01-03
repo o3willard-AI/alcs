@@ -1,0 +1,401 @@
+{
+  "dashboard": {
+    "title": "ALCS Overview",
+    "tags": ["alcs", "overview"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "type": "stat",
+        "title": "Active Sessions",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "alcs_sessions_active",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "colorMode": "value",
+          "graphMode": "area",
+          "orientation": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "green" },
+                { "value": 50, "color": "yellow" },
+                { "value": 80, "color": "red" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "type": "stat",
+        "title": "Sessions Total (1h)",
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(increase(alcs_sessions_total[1h]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "type": "stat",
+        "title": "Convergence Rate (1h)",
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(increase(alcs_sessions_converged_total[1h])) / sum(increase(alcs_sessions_total[1h])) * 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 70, "color": "yellow" },
+                { "value": 85, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "type": "stat",
+        "title": "Average Quality Score",
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "avg(alcs_quality_score)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 60, "color": "yellow" },
+                { "value": 80, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "type": "timeseries",
+        "title": "Sessions Over Time",
+        "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(alcs_sessions_total[5m])",
+            "legendFormat": "Total Sessions/s",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(alcs_sessions_converged_total[5m])",
+            "legendFormat": "Converged/s",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(alcs_sessions_escalated_total[5m])",
+            "legendFormat": "Escalated/s",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "type": "timeseries",
+        "title": "Quality Score Distribution",
+        "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(alcs_quality_score_distribution_bucket[5m]))",
+            "legendFormat": "p95 Quality Score",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(alcs_quality_score_distribution_bucket[5m]))",
+            "legendFormat": "p50 Quality Score",
+            "refId": "B"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "type": "timeseries",
+        "title": "Test Execution Success Rate",
+        "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "(sum(rate(alcs_test_executions_total[5m])) - sum(rate(alcs_test_executions_failed_total[5m]))) / sum(rate(alcs_test_executions_total[5m])) * 100",
+            "legendFormat": "Success Rate %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 8,
+        "type": "timeseries",
+        "title": "Test Coverage",
+        "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(alcs_test_coverage_percentage_bucket[5m]))",
+            "legendFormat": "p95 Coverage",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(alcs_test_coverage_percentage_bucket[5m]))",
+            "legendFormat": "p50 Coverage",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "type": "timeseries",
+        "title": "LLM Request Duration",
+        "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(alcs_llm_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95 Duration",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(alcs_llm_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p50 Duration",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "type": "timeseries",
+        "title": "LLM Tokens Used",
+        "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(alcs_llm_tokens_used_total{type=\"input\"}[5m])",
+            "legendFormat": "Input Tokens/s",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(alcs_llm_tokens_used_total{type=\"output\"}[5m])",
+            "legendFormat": "Output Tokens/s",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "type": "stat",
+        "title": "LLM Endpoint Status",
+        "gridPos": { "x": 0, "y": 28, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "alcs_llm_endpoint_up",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "colorMode": "background",
+          "graphMode": "none"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "value": 0, "text": "DOWN" },
+              { "type": "value", "value": 1, "text": "UP" }
+            ],
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 1, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 12,
+        "type": "timeseries",
+        "title": "Error Rate",
+        "gridPos": { "x": 6, "y": 28, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(alcs_errors_total[5m])) by (severity)",
+            "legendFormat": "{{severity}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 13,
+        "type": "timeseries",
+        "title": "Database Connection Pool",
+        "gridPos": { "x": 18, "y": 28, "w": 6, "h": 8 },
+        "targets": [
+          {
+            "expr": "alcs_database_pool_connections_in_use",
+            "legendFormat": "In Use",
+            "refId": "A"
+          },
+          {
+            "expr": "alcs_database_pool_connections_max",
+            "legendFormat": "Max",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 14,
+        "type": "timeseries",
+        "title": "Session Duration (p95)",
+        "gridPos": { "x": 0, "y": 36, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(alcs_session_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95 Session Duration",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 15,
+        "type": "timeseries",
+        "title": "Static Analysis Violations by Severity",
+        "gridPos": { "x": 12, "y": 36, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(alcs_static_analysis_violations_total[5m])) by (severity)",
+            "legendFormat": "{{severity}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "stacking": { "mode": "normal" }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

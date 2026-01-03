@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: alcs
+  namespace: alcs
+  labels:
+    app: alcs
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: alcs
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    scheme: http
+    # If authentication is required for metrics endpoint:
+    # bearerTokenSecret:
+    #   name: alcs-secrets
+    #   key: API_KEY
+  namespaceSelector:
+    matchNames:
+    - alcs

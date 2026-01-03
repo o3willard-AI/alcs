@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Session Model
+// Stores the state of each coding session
+model Session {
+  id                    String   @id
+  state                 String // StateMachineState enum value
+  current_iteration     Int      @default(0)
+  max_iterations        Int
+  quality_threshold     Float
+  last_quality_score    Float?
+  score_history         Json // Float[] stored as JSON for SQLite compatibility
+  content_hashes        Json // String[] stored as JSON for SQLite compatibility
+  elapsed_time_ms       BigInt   @default(0)
+  start_time            BigInt
+  task_timeout_minutes  Int      @default(30)
+  time_per_iteration_ms Json // BigInt[] stored as JSON for SQLite compatibility
+
+  // Relations
+  artifacts Artifact[]
+  reviews   Review[]
+
+  // Timestamps
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([state])
+  @@index([created_at])
+}
+
+// Artifact Model
+// Stores code, tests, reviews, and other artifacts generated during sessions
+model Artifact {
+  id          String  @id
+  session_id  String
+  type        String // 'code' | 'test_suite' | 'review' | 'log' | 'audit_trail'
+  description String
+  content     String?
+  metadata    Json?
+  timestamp   BigInt
+
+  // Relations
+  session Session @relation(fields: [session_id], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  created_at DateTime @default(now())
+
+  @@index([session_id])
+  @@index([type])
+  @@index([timestamp])
+}
+
+// Review Model
+// Stores code review results from Agent Beta
+model Review {
+  id                     String   @id
+  session_id             String
+  artifact_id            String
+  review_depth           String // 'quick' | 'standard' | 'comprehensive'
+  quality_score          Float
+  defects                Json // Array of Defect objects
+  test_coverage_estimate Float
+  policy_violations      Json // Array of PolicyRule objects
+  suggestions            Json // String[] stored as JSON for SQLite compatibility
+  recommendation         String // 'approve' | 'revise' | 'escalate'
+  required_changes       Json // String[] stored as JSON for SQLite compatibility
+  timestamp              BigInt
+
+  // Relations
+  session Session @relation(fields: [session_id], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  created_at DateTime @default(now())
+
+  @@index([session_id])
+  @@index([artifact_id])
+  @@index([quality_score])
+}

@@ -1,0 +1,78 @@
+# ALCS Production Dockerfile
+# Multi-stage build for minimal image size and security
+
+# Stage 1: Build
+FROM node:20-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install dependencies (including dev dependencies for build)
+RUN npm ci
+
+# Copy source code
+COPY src ./src
+COPY prisma ./prisma
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Build TypeScript
+RUN npm run build
+
+# Prune dev dependencies
+RUN npm prune --production
+
+# Stage 2: Production
+FROM node:20-alpine AS production
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    tini \
+    dumb-init \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user
+RUN addgroup -g 1000 alcs && \
+    adduser -D -u 1000 -G alcs alcs
+
+WORKDIR /app
+
+# Copy built application from builder
+COPY --from=builder --chown=alcs:alcs /app/dist ./dist
+COPY --from=builder --chown=alcs:alcs /app/node_modules ./node_modules
+COPY --from=builder --chown=alcs:alcs /app/package*.json ./
+COPY --from=builder --chown=alcs:alcs /app/prisma ./prisma
+
+# Copy configuration
+COPY --chown=alcs:alcs config ./config
+
+# Create logs directory
+RUN mkdir -p /app/logs && chown alcs:alcs /app/logs
+
+# Switch to non-root user
+USER alcs
+
+# Expose port (if using SSE transport)
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); });" || exit 1
+
+# Use tini as init system for proper signal handling
+ENTRYPOINT ["/sbin/tini", "--"]
+
+# Start the MCP server
+CMD ["node", "dist/mcp-server.js"]
+
+# Metadata
+LABEL maintainer="ALCS Team"
+LABEL description="Autonomous Local Coding Service - Production"
+LABEL version="1.0.0"

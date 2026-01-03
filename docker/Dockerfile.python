@@ -1,0 +1,42 @@
+# Python Test Execution Environment
+# Pre-configured with pytest, coverage, pylint, bandit, and flake8
+
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
+
+# Install test frameworks and analysis tools
+RUN pip install --no-cache-dir \
+    pytest==7.4.3 \
+    pytest-cov==4.1.0 \
+    pytest-timeout==2.2.0 \
+    pytest-xdist==3.5.0 \
+    coverage==7.3.2 \
+    pylint==3.0.2 \
+    bandit==1.7.5 \
+    flake8==6.1.0 \
+    black==23.11.0 \
+    mypy==1.7.1
+
+# Create non-root user for test execution
+RUN useradd -m -u 1000 -s /bin/bash testuser
+
+# Set working directory
+WORKDIR /workspace
+
+# Switch to non-root user
+USER testuser
+
+# Default command (can be overridden)
+CMD ["/bin/bash"]
+
+# Metadata
+LABEL maintainer="ALCS Team"
+LABEL description="Python test execution environment with pytest, pylint, and bandit"
+LABEL version="1.0.0"

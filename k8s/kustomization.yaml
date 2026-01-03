@@ -1,0 +1,55 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: alcs
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/name: alcs
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: kustomize
+
+# Resources to deploy
+resources:
+- namespace.yaml
+- rbac.yaml
+- configmap.yaml
+- secret.yaml
+- postgres.yaml
+- redis.yaml
+- deployment.yaml
+- service.yaml
+- hpa.yaml
+- pdb.yaml
+- ingress.yaml
+- networkpolicy.yaml
+- servicemonitor.yaml
+
+# Images to customize
+images:
+- name: alcs
+  newName: your-registry/alcs  # Replace with your registry
+  newTag: "1.0.0"
+
+# ConfigMap generator (alternative to configmap.yaml)
+# configMapGenerator:
+# - name: alcs-config
+#   literals:
+#   - NODE_ENV=production
+#   - LOG_LEVEL=info
+
+# Secret generator (alternative to secret.yaml)
+# DO NOT commit secrets to git!
+# secretGenerator:
+# - name: alcs-secrets
+#   literals:
+#   - API_KEY=...
+
+# Patches for environment-specific overrides
+# patchesStrategicMerge:
+# - overlays/production/deployment-patch.yaml
+
+# Replicas override
+# replicas:
+# - name: alcs
+#   count: 5

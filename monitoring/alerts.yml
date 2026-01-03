@@ -1,0 +1,175 @@
+# Prometheus Alerting Rules for ALCS
+
+groups:
+  - name: alcs_alerts
+    interval: 30s
+    rules:
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(alcs_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors/second (threshold: 0.05)"
+
+      # Long Session Duration
+      - alert: LongSessionDuration
+        expr: histogram_quantile(0.95, rate(alcs_session_duration_seconds_bucket[5m])) > 1800
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sessions taking too long"
+          description: "95th percentile session duration is {{ $value }} seconds (threshold: 1800)"
+
+      # Low Quality Scores
+      - alert: LowQualityScores
+        expr: avg(alcs_quality_score) < 60
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Average quality scores are low"
+          description: "Average quality score is {{ $value }} (threshold: 60)"
+
+      # LLM Endpoint Down
+      - alert: LLMEndpointDown
+        expr: alcs_llm_endpoint_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "LLM endpoint is down"
+          description: "{{ $labels.provider }} endpoint has been down for 5 minutes"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% (threshold: 80%)"
+
+      # Database Connection Pool Exhausted
+      - alert: DatabasePoolExhausted
+        expr: alcs_database_pool_connections_in_use / alcs_database_pool_connections_max > 0.9
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "{{ $value | humanizePercentage }} of database connections in use"
+
+      # High Request Rate
+      - alert: HighRequestRate
+        expr: rate(alcs_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "High request rate"
+          description: "Request rate is {{ $value }} req/second (threshold: 100)"
+
+      # Test Execution Failures
+      - alert: HighTestExecutionFailures
+        expr: rate(alcs_test_executions_failed_total[10m]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High test execution failure rate"
+          description: "Test execution failure rate is {{ $value }} failures/second"
+
+      # Static Analysis Failures
+      - alert: StaticAnalysisFailures
+        expr: rate(alcs_static_analysis_failed_total[10m]) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Static analysis failures detected"
+          description: "Static analysis failure rate is {{ $value }} failures/second"
+
+      # Session Stagnation
+      - alert: SessionStagnation
+        expr: alcs_sessions_stagnant_total > 10
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Multiple sessions are stagnant"
+          description: "{{ $value }} sessions have been stagnant for 30+ minutes"
+
+      # Escalation Rate High
+      - alert: HighEscalationRate
+        expr: rate(alcs_sessions_escalated_total[1h]) / rate(alcs_sessions_total[1h]) > 0.3
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "High session escalation rate"
+          description: "{{ $value | humanizePercentage }} of sessions are being escalated"
+
+      # Docker Container Issues
+      - alert: DockerContainerIssues
+        expr: rate(alcs_docker_container_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Docker container failures detected"
+          description: "Docker container failure rate is {{ $value }} failures/second"
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space running low"
+          description: "Only {{ $value | humanizePercentage }} disk space remaining"
+
+      # ALCS Service Down
+      - alert: ALCSServiceDown
+        expr: up{job="alcs"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ALCS service is down"
+          description: "ALCS service has been down for 2 minutes"
+
+      # Database Down
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "Database has been down for 2 minutes"
+
+      # Redis Down
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis has been down for 5 minutes (caching disabled)"

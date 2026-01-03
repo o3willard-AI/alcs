@@ -1,0 +1,54 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#2C3E50', 'primaryTextColor': '#fff', 'primaryBorderColor': '#1A252F', 'lineColor': '#5D6D7E', 'secondaryColor': '#3498DB', 'tertiaryColor': '#E8F4FD'}}}%%
+
+sequenceDiagram
+    autonumber
+    
+    participant OL as 🎯 Orchestration Layer<br/>(Claude Code / Copilot)
+    participant MCP as 🔌 MCP Server<br/>(TypeScript Bridge)
+    participant Alpha as 🤖 Agent Alpha<br/>(Code Generator)
+    participant Beta as 🔍 Agent Beta<br/>(Reviewer)
+    
+    Note over OL,Beta: Phase 1: Task Initiation
+    
+    OL->>+MCP: execute_task_spec(spec, max_iter=3, threshold=85)
+    MCP->>MCP: Validate parameters
+    MCP->>MCP: Create session
+    MCP->>MCP: State: IDLE → GENERATING
+    
+    MCP->>+Alpha: Generate code from TaskSpec
+    Alpha-->>-MCP: Code artifact returned
+    MCP->>MCP: Store artifact (v1)
+    MCP->>MCP: State: GENERATING → REVIEWING
+    
+    Note over OL,Beta: Phase 2: Review-Revise Loop
+    
+    loop Until converged OR max_iterations OR escalated
+        MCP->>+Beta: Review artifact (depth=COMPREHENSIVE)
+        Beta->>Beta: Static analysis
+        Beta->>Beta: Generate tests
+        Beta->>Beta: Calculate quality_score
+        Beta-->>-MCP: ReviewFeedback {score: 72, defects, suggestions}
+        
+        alt quality_score ≥ threshold
+            MCP->>MCP: State: REVIEWING → CONVERGED
+        else iteration < max AND improving
+            MCP->>MCP: State: REVIEWING → REVISING
+            MCP->>+Alpha: revise_code(feedback)
+            Alpha-->>-MCP: Improved artifact (v2)
+            MCP->>MCP: State: REVISING → REVIEWING
+        else max_iterations reached OR stagnant
+            MCP->>MCP: State: REVIEWING → ESCALATED
+            MCP-->>OL: Escalation: best-effort + audit trail
+            OL->>MCP: Decision: "switch LLM" / "retry" / "abort"
+        end
+    end
+    
+    Note over OL,Beta: Phase 3: Successful Handoff
+    
+    MCP-->>OL: Success: artifact_id, final_score=88
+    OL->>+MCP: final_handoff_archive(session_id, audit=true)
+    MCP->>MCP: Package artifacts + history + tests
+    MCP-->>-OL: HandoffArchive
+    MCP->>MCP: State: CONVERGED → IDLE
+    
+    Note over OL,Beta: Session Complete
